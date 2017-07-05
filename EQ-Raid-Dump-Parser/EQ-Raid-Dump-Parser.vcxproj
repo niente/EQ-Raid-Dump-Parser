@@ -113,6 +113,10 @@
   <ItemGroup>
     <ClCompile Include="EQ-Raid-Dump-Parser.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EQ-Raid-Dump-Parser.h" />
+    <ClInclude Include="InputFile.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
