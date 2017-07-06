@@ -45,15 +45,15 @@ class FileList
 {
 private:
 	Directory *directory;
-	vector<string> filenames;
 	string delimiter;
 public:
 	FileList();
+	vector<string> filenames;
+	vector<string> shortnames;
 	void setDelimiter(string d);
 	void setDirectory(Directory *d);
 	void buildFileList();
 	bool isRaidDump(string s);
-	vector<string> getFilenames();
 };
 
 FileList::FileList()
@@ -85,10 +85,11 @@ void FileList::buildFileList()
 				fpath += directory->ent->d_name;
 				//cout << fpath << endl;
 				filenames.push_back(fpath);
+				shortnames.push_back(directory->ent->d_name);
 			}
 	}
 
-	for (auto i = filenames.begin(); i != filenames.end(); ++i)
+	for (auto i = shortnames.begin(); i != shortnames.end(); ++i)
 	{
 		cout << *i << endl;
 	}
@@ -98,11 +99,6 @@ bool FileList::isRaidDump(string filename)
 {
 	regex pattern("RaidRoster-\\d{8}-\\d{6}\.txt");
 	return regex_search(filename.begin(), filename.end(), pattern);
-}
-
-vector<string> FileList::getFilenames()
-{
-	return filenames;
 }
 
 class OutputData
@@ -122,24 +118,24 @@ public:
 
 bool operator<(const OutputData &data1, const OutputData &data2)
 {
-	if (data1.weightedGrp == data2.weightedGrp)
+	if (data1.weightedGrp == data2.weightedGrp) // if they're in the same group
 	{
-		if (data1.playerclass == data2.playerclass)
+		if (data1.playerclass == data2.playerclass) // and they're the same class
 		{
-			if (data1.name < data2.name)
+			if (data1.name < data2.name) // sort alpha by name
 				return true;
 			else
 				return false;
 		}			
 		else
 		{
-			if (data1.playerclass < data2.playerclass)
+			if (data1.playerclass < data2.playerclass) // if they're in the same group, sort alpha by class
 				return true;
 			else
 				return false;
 		}			
 	}
-	else if (data1.weightedGrp < data2.weightedGrp)
+	else if (data1.weightedGrp < data2.weightedGrp) // if different groups, sort by group
 		return true;
 	else
 		return false;
@@ -147,24 +143,24 @@ bool operator<(const OutputData &data1, const OutputData &data2)
 
 bool operator>(const OutputData &data1, const OutputData &data2)
 {
-	if (data1.weightedGrp == data2.weightedGrp)
+	if (data1.weightedGrp == data2.weightedGrp) // if they're in the same group
 	{
-		if (data1.playerclass == data2.playerclass)
+		if (data1.playerclass == data2.playerclass) // and they're the same class
 		{
-			if (data1.name > data2.name)
+			if (data1.name > data2.name) // sort alpha by name
 				return true;
 			else
 				return false;
 		}
 		else
 		{
-			if (data1.playerclass > data2.playerclass)
+			if (data1.playerclass > data2.playerclass) // if they're in the same group, sort alpha by class
 				return true;
 			else
 				return false;
 		}
 	}
-	else if (data1.weightedGrp > data2.weightedGrp)
+	else if (data1.weightedGrp > data2.weightedGrp) // if different groups, sort by group
 		return true;
 	else
 		return false;
@@ -181,31 +177,34 @@ bool operator==(const OutputData &data1, const OutputData &data2)
 
 ostream &operator<<(ostream &os, const OutputData &output)
 {
-	os << output.grp << " " << output.playerclass << " " << output.name;
+	os << output.grp << " " << output.pcformatted << " " << output.name;
 	return os;
 }
 
 class RaidDumpParser
 {
 private:
+	FileList *fileList;
 	string filename;
 	string line;
 	stringstream ss;
 	ifstream inFile;
-	vector<string> *fileList;
+	//vector<string> *fileList;
 	unordered_map<string, string> classFormat;
 	OutputData lineData;
 	vector<OutputData> output;
+	int nBenched;
 public:
-	RaidDumpParser(vector<string> *fList);
+	RaidDumpParser(FileList *fList);
 	void buildClassFormatMap();
 	void parse();
 	void printOutput();
-	void sort();
+	void writeOutputFile();
 };
 
-RaidDumpParser::RaidDumpParser(vector<string> *fList)
+RaidDumpParser::RaidDumpParser(FileList *fList)
 {
+	nBenched = 0;
 	fileList = fList;
 	buildClassFormatMap();
 }
@@ -232,9 +231,9 @@ void RaidDumpParser::buildClassFormatMap()
 
 void RaidDumpParser::parse()
 {
-	filename = fileList->at(0);
+	filename = fileList->filenames[0];
 	inFile.open(filename);
-	cout << "Opening " << fileList->at(0) << endl;
+	cout << "Opening " << fileList->filenames[0] << endl;
 	while (getline(inFile, line))
 	{
 		ss << line;
@@ -246,7 +245,10 @@ void RaidDumpParser::parse()
 
 		lineData.pcformatted = classFormat[lineData.playerclass];
 		if (lineData.grp == 0)
+		{
 			lineData.weightedGrp = MAX_GROUPS + 1;
+			nBenched++;
+		}			
 		else
 			lineData.weightedGrp = lineData.grp;
 
@@ -254,19 +256,8 @@ void RaidDumpParser::parse()
 		ss.str("");
 		ss.clear();
 	}
-}
-
-void RaidDumpParser::sort()
-{
-	//for (int i = 0; i < output.size() - 1; i++)
-	//{
-	//	if (output[i] < output[i+1])
-	//		cout << output[i] << " < " << output[i + 1] << endl;
-	//	else
-	//		cout << output[i] << " > " << output[i + 1] << endl;
-	//}
-
-	std::sort(output.begin(), output.end());
+	inFile.close();
+	sort(output.begin(), output.end());
 }
 
 void RaidDumpParser::printOutput()
@@ -275,19 +266,35 @@ void RaidDumpParser::printOutput()
 		cout << *i << endl;
 }
 
+void RaidDumpParser::writeOutputFile()
+{
+	ofstream outFile;
+	int currGrp = output[0].grp;
+	outFile.open("Processed" + fileList->shortnames[0]);
+	outFile << "[b][u]Event[/b][/u] (" << output.size() - nBenched << ") + " << nBenched << "\n";
+	for (int i = 0; i < output.size(); i++)
+	{
+		if (output[i].grp != currGrp)
+		{
+			outFile << "\n";
+			currGrp = output[i].grp;
+		}
+		outFile << output[i] << "\n";
+	}
+	outFile.close();
+}
+
 int main()
 {
 	Directory eqDir(EQ_PATH);
 	FileList raidDumps;
 	raidDumps.setDirectory(&eqDir);
 	raidDumps.buildFileList();
-	vector<string> filenames = raidDumps.getFilenames();
-	RaidDumpParser parser(&filenames);
+	RaidDumpParser parser(&raidDumps);
 	parser.parse();
-	parser.printOutput();
-	cout << "SORTED:\n";
-	parser.sort();
-	parser.printOutput();
+	//parser.printOutput();
+	parser.writeOutputFile();
+
 	// process each file and save in a local folder.
 
 	
