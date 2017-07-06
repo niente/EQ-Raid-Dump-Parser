@@ -10,6 +10,7 @@
 using namespace std;
 
 #define EQ_PATH "C:\\Users\\Public\\Daybreak Game Company\\Installed Games\\EverQuest"
+#define MAX_GROUPS 12
 
 class Directory
 {
@@ -110,13 +111,57 @@ public:
 	int grp;
 	string name;
 	int level;
+	int weightedGrp;
 	string playerclass;
+	string pcformatted;
+	friend bool operator<(const OutputData &data1, const OutputData &data2);
+	friend bool operator>(const OutputData &data1, const OutputData &data2);
+	friend bool operator==(const OutputData &data1, const OutputData &data2);
 	friend ostream &operator<<(ostream &os, const OutputData &output);
 };
 
+bool operator<(const OutputData &data1, const OutputData &data2)
+{
+	if (data1.weightedGrp == data2.weightedGrp)
+	{
+		if (data1.playerclass < data2.playerclass)
+			return true;
+		else
+			return false;
+	}
+	else if (data1.weightedGrp < data2.weightedGrp)
+		return true;
+	else
+		return false;
+}
+
+bool operator>(const OutputData &data1, const OutputData &data2)
+{
+	if (data1.weightedGrp == data2.weightedGrp)
+	{
+		if (data1.playerclass > data2.playerclass)
+			return true;
+		else
+			return false;
+	}
+	else if (data1.weightedGrp > data2.weightedGrp)
+		return true;
+	else
+		return false;
+}
+
+bool operator==(const OutputData &data1, const OutputData &data2)
+{
+	if (data1.grp == data2.grp && data1.name == data2.name &&
+		data1.level == data2.level && data1.playerclass == data2.playerclass)
+		return true;
+	else
+		return false;
+}
+
 ostream &operator<<(ostream &os, const OutputData &output)
 {
-	os << output.grp << " " << output.playerclass << " " << output.name << endl;
+	os << output.grp << " " << output.playerclass << " " << output.name;
 	return os;
 }
 
@@ -136,11 +181,13 @@ public:
 	void buildClassFormatMap();
 	void parse();
 	void printOutput();
+	void sort();
 };
 
 RaidDumpParser::RaidDumpParser(vector<string> *fList)
 {
 	fileList = fList;
+	buildClassFormatMap();
 }
 
 void RaidDumpParser::buildClassFormatMap()
@@ -166,7 +213,6 @@ void RaidDumpParser::buildClassFormatMap()
 void RaidDumpParser::parse()
 {
 	filename = fileList->at(0);
-	string temp;
 	inFile.open(filename);
 	cout << "Opening " << fileList->at(0) << endl;
 	while (getline(inFile, line))
@@ -178,16 +224,35 @@ void RaidDumpParser::parse()
 		ss >> lineData.level;
 		ss >> lineData.playerclass;
 
+		lineData.pcformatted = classFormat[lineData.playerclass];
+		if (lineData.grp == 0)
+			lineData.weightedGrp = MAX_GROUPS + 1;
+		else
+			lineData.weightedGrp = lineData.grp;
+
 		output.push_back(lineData);
 		ss.str("");
 		ss.clear();
 	}
 }
 
+void RaidDumpParser::sort()
+{
+	//for (int i = 0; i < output.size() - 1; i++)
+	//{
+	//	if (output[i] < output[i+1])
+	//		cout << output[i] << " < " << output[i + 1] << endl;
+	//	else
+	//		cout << output[i] << " > " << output[i + 1] << endl;
+	//}
+
+	std::sort(output.begin(), output.end());
+}
+
 void RaidDumpParser::printOutput()
 {
 	for (auto i = output.begin(); i != output.end(); ++i)
-		cout << *i;
+		cout << *i << endl;
 }
 
 int main()
@@ -199,6 +264,9 @@ int main()
 	vector<string> filenames = raidDumps.getFilenames();
 	RaidDumpParser parser(&filenames);
 	parser.parse();
+	parser.printOutput();
+	cout << "SORTED:\n";
+	parser.sort();
 	parser.printOutput();
 	// process each file and save in a local folder.
 
