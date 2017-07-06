@@ -124,10 +124,20 @@ bool operator<(const OutputData &data1, const OutputData &data2)
 {
 	if (data1.weightedGrp == data2.weightedGrp)
 	{
-		if (data1.playerclass < data2.playerclass)
-			return true;
+		if (data1.playerclass == data2.playerclass)
+		{
+			if (data1.name < data2.name)
+				return true;
+			else
+				return false;
+		}			
 		else
-			return false;
+		{
+			if (data1.playerclass < data2.playerclass)
+				return true;
+			else
+				return false;
+		}			
 	}
 	else if (data1.weightedGrp < data2.weightedGrp)
 		return true;
@@ -139,10 +149,20 @@ bool operator>(const OutputData &data1, const OutputData &data2)
 {
 	if (data1.weightedGrp == data2.weightedGrp)
 	{
-		if (data1.playerclass > data2.playerclass)
-			return true;
+		if (data1.playerclass == data2.playerclass)
+		{
+			if (data1.name > data2.name)
+				return true;
+			else
+				return false;
+		}
 		else
-			return false;
+		{
+			if (data1.playerclass > data2.playerclass)
+				return true;
+			else
+				return false;
+		}
 	}
 	else if (data1.weightedGrp > data2.weightedGrp)
 		return true;
