@@ -2,10 +2,12 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <dirent.h>
 #include <regex>
 #include <vector>
 #include <unordered_map>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -200,6 +202,7 @@ public:
 	void parse();
 	void printOutput();
 	void writeOutputFile();
+	void buildDir();
 };
 
 RaidDumpParser::RaidDumpParser(FileList *fList)
@@ -268,9 +271,12 @@ void RaidDumpParser::printOutput()
 
 void RaidDumpParser::writeOutputFile()
 {
+	cout << "Writing to output file...\n";
 	ofstream outFile;
+	string fpath;
+	fpath = "Raid Dumps\\Processed\\Processed";
 	int currGrp = output[0].grp;
-	outFile.open("Processed" + fileList->shortnames[0]);
+	outFile.open((fpath + fileList->shortnames[0]).c_str());
 	outFile << "[b][u]Event[/b][/u] (" << output.size() - nBenched << ") + " << nBenched << "\n";
 	for (int i = 0; i < output.size(); i++)
 	{
@@ -284,6 +290,13 @@ void RaidDumpParser::writeOutputFile()
 	outFile.close();
 }
 
+void RaidDumpParser::buildDir()
+{
+	system("mkdir \"Raid Dumps\"");
+	system("mkdir \"Raid Dumps\"\\Processed");
+	system("mkdir \"Raid Dumps\"\\Pre-Processed");
+}
+
 int main()
 {
 	Directory eqDir(EQ_PATH);
@@ -292,9 +305,8 @@ int main()
 	raidDumps.buildFileList();
 	RaidDumpParser parser(&raidDumps);
 	parser.parse();
-	//parser.printOutput();
+	parser.buildDir();
 	parser.writeOutputFile();
-
 	// process each file and save in a local folder.
 
 	
