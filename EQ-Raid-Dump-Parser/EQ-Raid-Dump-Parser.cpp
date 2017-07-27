@@ -8,6 +8,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstdio>
 
 using namespace std;
 
@@ -200,9 +201,9 @@ public:
 	RaidDumpParser(FileList *fList);
 	void buildClassFormatMap();
 	void parse();
+	vector<OutputData> *getData();
 	void printOutput();
 	void writeOutputFile();
-	void buildDir();
 };
 
 RaidDumpParser::RaidDumpParser(FileList *fList)
@@ -290,11 +291,64 @@ void RaidDumpParser::writeOutputFile()
 	outFile.close();
 }
 
-void RaidDumpParser::buildDir()
+vector<OutputData> *RaidDumpParser::getData()
+{
+	return &output;
+}
+
+class FileHandler
+{
+private:
+	vector<OutputData> *output;
+public:
+	FileHandler(vector<OutputData> *data);
+	void buildDir();
+	void printData();
+	void copyFile(string f1, string f2);
+	string getPrePath();
+};
+
+FileHandler::FileHandler(vector<OutputData> *data)
+{
+	output = data;
+}
+
+void FileHandler::printData()
+{
+	for (auto i = output->begin(); i != output->end(); ++i)
+		cout << *i << endl;
+}
+
+void FileHandler::buildDir()
 {
 	system("mkdir \"Raid Dumps\"");
 	system("mkdir \"Raid Dumps\"\\Processed");
 	system("mkdir \"Raid Dumps\"\\Pre-Processed");
+}
+
+void FileHandler::copyFile(string f1, string f2)
+{
+	const static int BUF_SIZE = 4096;
+	ifstream sourceFile(f1, ios_base::in | ios_base::binary);
+	ofstream destinationFile(f2, ios_base::out | ios_base::binary);
+	char buf[BUF_SIZE];
+
+	do
+	{
+		sourceFile.read(&buf[0], BUF_SIZE);
+		destinationFile.write(&buf[0], sourceFile.gcount()); // gcount = char count in the stream
+	} while (sourceFile.gcount() > 0);
+
+	sourceFile.close();
+	destinationFile.close();
+}
+
+string FileHandler::getPrePath()
+{
+	// temp just do 1st file...
+	string outpath = "";
+//	outpath = "Raid Dumps\\Pre-Processed\\" + fileList->shortnames[0]).c_str();
+	return outpath;
 }
 
 int main()
@@ -305,10 +359,14 @@ int main()
 	raidDumps.buildFileList();
 	RaidDumpParser parser(&raidDumps);
 	parser.parse();
-	parser.buildDir();
+	FileHandler filehandler(parser.getData());
+	filehandler.buildDir();
+	filehandler.printData();
 	parser.writeOutputFile();
 	// process each file and save in a local folder.
-
+	// next; move old file to /Raid Dumps/Pre-Processed
+	// finally: loop for all existing raid dump files.
+	filehandler.copyFile(raidDumps.filenames[0], "Raid Dumps\\Pre-Processed");
 	
 	system("pause");
 	return 0;
