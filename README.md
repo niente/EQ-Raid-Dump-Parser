@@ -10,7 +10,8 @@ Raid Dumps\Processed\
 ![Sample Image of Forum Post](https://github.com/niente/EQ-Raid-Dump-Parser/blob/master/sampleoutputRaidRoster.png)
 
 Sample text file:
-```[b][u]Event[/b][/u] (46) + 2
+```
+[b][u]Event[/b][/u] (46) + 2
 1 [COLOR="Cyan"]CLR[/COLOR] Cookeez
 1 [COLOR="Cyan"]CLR[/COLOR] Khalimari
 1 [COLOR="Cyan"]CLR[/COLOR] Pixiepuffles
@@ -21,4 +22,5 @@ Sample text file:
 2 [COLOR="Cyan"]CLR[/COLOR] Dalef
 2 [COLOR="Cyan"]CLR[/COLOR] Donaskz
 2 [COLOR="Orange"]PAL[/COLOR] Tanksum
-2 [COLOR="Orange"]SHD[/COLOR] Elnoche```
+2 [COLOR="Orange"]SHD[/COLOR] Elnoche
+```
